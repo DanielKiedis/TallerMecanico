@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Taller Mecánico Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-user-cog"></i>
+            <span>Panel Administrativo</span>
+        </div>
+        <div class="nav-right">
+            <button class="btn-login" onclick="adminApp.logout()">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="admin-header">
+            <h1><i class="fas fa-tachometer-alt"></i> Dashboard Administrativo</h1>
+            <p>Gestión completa del taller mecánico</p>
+            <div class="admin-info">
+                <p><i class="fas fa-user"></i> Administrador: <span id="adminName">Cargando...</span></p>
+                <p><i class="fas fa-clock"></i> Último acceso: <span id="lastAccess">Hoy</span></p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Citas Hoy</h3>
+                    <p class="stat-number" id="citasHoy">0</p>
+                    <p class="stat-change"><i class="fas fa-arrow-up"></i> <span id="citasChange">0%</span> vs ayer</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-truck-pickup"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Grúas Pendientes</h3>
+                    <p class="stat-number" id="gruasPendientes">0</p>
+                    <p class="stat-change"><i class="fas fa-clock"></i> <span id="gruasTiempo">0 min</span> promedio</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Usuarios Activos</h3>
+                    <p class="stat-number" id="usuariosActivos">0</p>
+                    <p class="stat-change"><i class="fas fa-user-plus"></i> <span id="usuariosNuevos">0</span> nuevos</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Ingresos Hoy</h3>
+                    <p class="stat-number">$<span id="ingresosHoy">0</span></p>
+                    <p class="stat-change"><i class="fas fa-chart-line"></i> <span id="ingresosChange">0%</span> vs ayer</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-grid">
+            <!-- Sección Usuarios -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-users"></i> Gestión de Usuarios</h2>
+                    <button class="btn-primary" onclick="adminApp.showUserModal()">
+                        <i class="fas fa-user-plus"></i> Nuevo Usuario
+                    </button>
+                </div>
+                <div class="table-container" id="usuariosTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando usuarios...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Citas -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-calendar-alt"></i> Citas Recientes</h2>
+                    <div class="filter-options">
+                        <select id="citasFilter" onchange="adminApp.filterCitas()">
+                            <option value="all">Todas las citas</option>
+                            <option value="today">Hoy</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="confirmed">Confirmadas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container" id="citasTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando citas...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Grúas -->
+            <section class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-truck-pickup"></i> Solicitudes de Grúa</h2>
+                    <div class="filter-options">
+                        <select id="gruasFilter" onchange="adminApp.filterGruas()">
+                            <option value="all">Todas las solicitudes</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="en_camino">En Camino</option>
+                            <option value="completed">Completadas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-container" id="gruasTable">
+                    <div class="loading">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando grúas...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Reportes -->
+            <section class="admin-section full-width">
+                <h2><i class="fas fa-chart-bar"></i> Reportes y Estadísticas</h2>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3><i class="fas fa-calendar-week"></i> Citas por Día</h3>
+                        <div class="chart-placeholder">
+                            <p>Gráfico de citas por día de la semana</p>
+                            <canvas id="citasChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="report-card">
+                        <h3><i class="fas fa-car"></i> Servicios Populares</h3>
+                        <div class="chart-placeholder">
+                            <p>Top 5 servicios más solicitados</p>
+                            <canvas id="serviciosChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para nuevo usuario -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="adminApp.closeUserModal()">&times;</span>
+            <h2><i class="fas fa-user-plus"></i> Nuevo Usuario</h2>
+            <form id="userForm" class="modern-form">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Usuario *</label>
+                    <input type="text" name="username" required placeholder="Nombre de usuario">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Contraseña *</label>
+                    <input type="password" name="password" required placeholder="Contraseña segura">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-user-tag"></i> Rol *</label>
+                    <select name="role" required>
+                        <option value="user">Usuario Regular</option>
+                        <option value="admin">Administrador</option>
+                        <option value="mecanico">Mecánico</option>
+                        <option value="recepcion">Recepción</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
+                    <input type="email" name="email" placeholder="correo@ejemplo.com">
+                </div>
+                <div class="form-footer">
+                    <button type="submit" class="btn-primary btn-block">
+                        <i class="fas fa-save"></i> Guardar Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ver detalles -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="adminApp.closeDetailModal()">&times;</span>
+            <div id="detailContent">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller Mecánico Pro - Servicio Automotriz de Calidad</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+</head>
+<body>
+    <!-- Menú Hamburguesa -->
+    <div class="menu-btn">
+        <i class="fas fa-bars"></i>
+    </div>
+    
+    <!-- Barra de Navegación -->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-car"></i>
+            <span>TallerMecánicoPro</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="#inicio"><i class="fas fa-home"></i> Inicio</a></li>
+            <li><a href="#mision"><i class="fas fa-bullseye"></i> Misión/Visión</a></li>
+            <li><a href="#ofertas"><i class="fas fa-tag"></i> Ofertas</a></li>
+            <li><a href="#servicios"><i class="fas fa-tools"></i> Servicios</a></li>
+            <li><a href="#citas"><i class="fas fa-calendar-alt"></i> Citas</a></li>
+            <li><a href="#grua"><i class="fas fa-truck-pickup"></i> Grúa</a></li>
+            <li><a href="#ubicacion"><i class="fas fa-map-marker-alt"></i> Ubicación</a></li>
+            <li><a href="#nosotros"><i class="fas fa-users"></i> Nosotros</a></li>
+            <li><a href="#" id="menuLoginBtn"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+        </ul>
+        <div class="nav-right">
+            <button class="btn-login" id="loginBtn">
+                <i class="fas fa-user"></i> Admin
+            </button>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="container">
+        <!-- Sección Inicio -->
+        <section id="inicio" class="section hero">
+            <div class="hero-content">
+                <h1><i class="fas fa-wrench"></i> Taller Mecánico Profesional</h1>
+                <p>Servicio de calidad para tu vehículo con los mejores especialistas certificados. Más de 13 años de experiencia nos respaldan.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary" onclick="scrollToSection('citas')">
+                        <i class="fas fa-calendar-check"></i> Agendar Cita
+                    </button>
+                    <button class="btn-secondary" onclick="scrollToSection('grua')">
+                        <i class="fas fa-phone"></i> Emergencia 24/7
+                    </button>
+                </div>
+            </div>
+            <div class="hero-image">
+                <i class="fas fa-car-side"></i>
+            </div>
+        </section>
+
+        <!-- Login Modal -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2><i class="fas fa-lock"></i> Iniciar Sesión</h2>
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Usuario</label>
+                    <input type="text" id="username" placeholder="Ingresa tu usuario" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> Contraseña</label>
+                    <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+                </div>
+                <div class="form-group remember">
+                    <input type="checkbox" id="remember">
+                    <label for="remember">Recordar sesión</label>
+                </div>
+                <button class="btn-primary btn-block" onclick="login()">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+                <p class="login-note">Usuario demo: <strong>admin</strong> / Contraseña: <strong>admin123</strong></p>
+                <p id="loginError" class="error-message"></p>
+            </div>
+        </div>
+
+        <!-- Sección Misión/Visión -->
+        <section id="mision" class="section">
+            <h2 class="section-title"><i class="fas fa-bullseye"></i> Nuestra Misión y Visión</h2>
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-flag"></i>
+                    </div>
+                    <h3>Misión</h3>
+                    <p id="mision-text">Cargando...</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h3>Visión</h3>
+                    <p id="vision-text">Cargando...</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <h3>Objetivo</h3>
+                    <p id="objetivo-text">Cargando...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Ofertas -->
+        <section id="ofertas" class="section">
+            <h2 class="section-title"><i class="fas fa-tag"></i> Ofertas Especiales</h2>
+            <p class="section-subtitle">Aprovecha nuestras promociones por tiempo limitado</p>
+            <div class="offers-grid" id="ofertas-container">
+                <!-- Las ofertas se cargarán aquí -->
+                <div class="loading">
+                    <i class="fas fa-sync fa-spin"></i> Cargando ofertas...
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Servicios -->
+        <section id="servicios" class="section">
+            <h2 class="section-title"><i class="fas fa-tools"></i> Nuestros Servicios</h2>
+            <p class="section-subtitle">Servicios especializados con garantía y calidad certificada</p>
+            <div class="services-grid" id="servicios-container">
+                <!-- Los servicios se cargarán aquí -->
+                <div class="loading">
+                    <i class="fas fa-sync fa-spin"></i> Cargando servicios...
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Citas -->
+        <section id="citas" class="section">
+            <h2 class="section-title"><i class="fas fa-calendar-alt"></i> Agendar Cita</h2>
+            <p class="section-subtitle">Programa tu servicio con anticipación y obtén 10% de descuento</p>
+            <div class="form-container">
+                <form id="citaForm" class="modern-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Nombre Completo *</label>
+                            <input type="text" name="nombre" required placeholder="Ej: Juan Pérez">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Correo Electrónico *</label>
+                            <input type="email" name="correo" required placeholder="ejemplo@correo.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Teléfono *</label>
+                            <input type="tel" name="telefono" required placeholder="(55) 1234-5678">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-car"></i> Marca del Auto *</label>
+                            <input type="text" name="marca_carro" required placeholder="Ej: Toyota, Ford, Volkswagen">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-car-side"></i> Modelo *</label>
+                            <input type="text" name="modelo_carro" required placeholder="Ej: Corolla, Focus, Jetta">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Año *</label>
+                            <input type="number" name="año_carro" min="1990" max="2024" required placeholder="2020">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-file-alt"></i> Descripción del Problema *</label>
+                        <textarea name="descripcion" rows="4" required placeholder="Describa el problema o servicio que requiere..."></textarea>
+                    </div>
+                    <div class="form-footer">
+                        <p class="form-note"><i class="fas fa-info-circle"></i> Recibirás confirmación por correo en minutos</p>
+                        <button type="submit" class="btn-primary btn-block">
+                            <i class="fas fa-paper-plane"></i> Solicitar Cita
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Sección Grúa -->
+        <section id="grua" class="section emergency-section">
+            <div class="emergency-badge">
+                <i class="fas fa-exclamation-triangle"></i> EMERGENCIA 24/7
+            </div>
+            <h2 class="section-title"><i class="fas fa-truck-pickup"></i> Solicitar Grúa de Auxilio</h2>
+            <p class="section-subtitle">Servicio de grúa disponible las 24 horas, los 7 días de la semana</p>
+            <div class="form-container">
+                <form id="gruaForm" class="modern-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Nombre *</label>
+                            <input type="text" name="nombre" required placeholder="Tu nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Correo *</label>
+                            <input type="email" name="correo" required placeholder="correo@ejemplo.com">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Teléfono *</label>
+                            <input type="tel" name="telefono" required placeholder="Número de contacto">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-car"></i> Marca *</label>
+                            <input type="text" name="marca_carro" required placeholder="Marca del vehículo">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-car-side"></i> Modelo *</label>
+                            <input type="text" name="modelo_carro" required placeholder="Modelo del vehículo">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Año *</label>
+                            <input type="number" name="año_carro" min="1990" max="2024" required placeholder="Año del vehículo">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-map-pin"></i> Ubicación Exacta *</label>
+                        <input type="text" name="ubicacion" placeholder="Calle, número, colonia, ciudad, referencia..." required>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-exclamation-triangle"></i> Descripción de la Falla *</label>
+                        <textarea name="descripcion_falla" rows="4" required placeholder="Describa qué sucedió y el estado del vehículo..."></textarea>
+                    </div>
+                    <div class="form-footer">
+                        <p class="emergency-note"><i class="fas fa-phone-alt"></i> Para emergencias inmediatas: <strong>(55) 1234-5678</strong></p>
+                        <button type="submit" class="btn-emergency btn-block">
+                            <i class="fas fa-truck"></i> Solicitar Grúa Urgente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Sección Ubicación -->
+        <section id="ubicacion" class="section">
+            <h2 class="section-title"><i class="fas fa-map-marker-alt"></i> Nuestra Ubicación</h2>
+            <p class="section-subtitle">Visítanos en nuestro taller completamente equipado</p>
+            <div class="location-container">
+                <div class="location-info" id="ubicacion-info">
+                    <!-- Información de ubicación -->
+                </div>
+                <div class="location-map">
+                    <div class="map-placeholder">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <h3>Taller Principal</h3>
+                        <p>Av. Tecnológico #1500</p>
+                        <p>Col. Centro, Ciudad de México</p>
+                        <p>CDMX 06300</p>
+                        <div class="map-buttons">
+                            <button class="btn-map" onclick="openGoogleMaps()">
+                                <i class="fab fa-google"></i> Google Maps
+                            </button>
+                            <button class="btn-map" onclick="openWaze()">
+                                <i class="fab fa-waze"></i> Waze
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección Nosotros -->
+        <section id="nosotros" class="section">
+            <h2 class="section-title"><i class="fas fa-users"></i> Sobre Nosotros</h2>
+            <p class="section-subtitle">Más de una década de excelencia en servicio automotriz</p>
+            <div class="about-container" id="nosotros-info">
+                <!-- Información sobre nosotros -->
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3><i class="fas fa-car"></i> Taller Mecánico Pro</h3>
+                    <p>Servicios automotrices de calidad desde 2010</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3><i class="fas fa-phone"></i> Contacto</h3>
+                    <p><i class="fas fa-phone-alt"></i> (55) 1234-5678</p>
+                    <p><i class="fab fa-whatsapp"></i> (55) 8765-4321</p>
+                    <p><i class="fas fa-envelope"></i> info@tallermecanicopro.com</p>
+                    <p><i class="fas fa-clock"></i> 24/7 Emergencias</p>
+                </div>
+                <div class="footer-section">
+                    <h3><i class="fas fa-clock"></i> Horario</h3>
+                    <p><strong>Lunes a Viernes:</strong> 8am - 8pm</p>
+                    <p><strong>Sábados:</strong> 9am - 4pm</p>
+                    <p><strong>Domingos:</strong> Emergencias 24/7</p>
+                    <p><strong>Grúa:</strong> Disponible 24/7</p>
+                </div>
+                <div class="footer-section">
+                    <h3><i class="fas fa-map-marker-alt"></i> Encuéntranos</h3>
+                    <p>Av. Tecnológico #1500</p>
+                    <p>Col. Centro</p>
+                    <p>Ciudad de México, CDMX 06300</p>
+                    <button class="btn-footer" onclick="scrollToSection('ubicacion')">
+                        <i class="fas fa-directions"></i> Cómo llegar
+                    </button>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Taller Mecánico Pro. Todos los derechos reservados. | <a href="#privacidad">Política de Privacidad</a> | <a href="#terminos">Términos de Servicio</a></p>
+            </div>
+        </footer>
+    </main>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
