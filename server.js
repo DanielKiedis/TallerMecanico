@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
@@ -13,61 +13,160 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-const db = new sqlite3.Database('./database.db');
-
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT,
-        role TEXT DEFAULT 'user'
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS citas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        correo TEXT,
-        telefono TEXT,
-        marca_carro TEXT,
-        modelo_carro TEXT,
-        año_carro INTEGER,
-        descripcion TEXT,
-        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        estado TEXT DEFAULT 'pendiente'
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS gruas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        correo TEXT,
-        telefono TEXT,
-        marca_carro TEXT,
-        modelo_carro TEXT,
-        año_carro INTEGER,
-        ubicacion TEXT,
-        descripcion_falla TEXT,
-        fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        estado TEXT DEFAULT 'pendiente'
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS servicios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nombre TEXT,
-        descripcion TEXT,
-        precio REAL
-    )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS ofertas (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        titulo TEXT,
-        descripcion TEXT,
-        descuento TEXT,
-        valido_hasta TEXT
-    )`);
-
-    db.run(`INSERT OR IGNORE INTO usuarios (username, password, role) VALUES ('admin', 'admin123', 'admin')`);
+// CONEXIÓN MYSQL - Configuración para XAMPP
+const db = mysql.createConnection({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || '',
+    database: process.env.DB_NAME || 'taller_mecanico',
+    port: process.env.DB_PORT || 3306,
+    charset: 'utf8mb4'
 });
 
+db.connect((err) => {
+    if (err) {
+        console.error('Error conectando a MySQL:', err);
+        console.log('Asegúrate de que:');
+        console.log('   1. XAMPP esté ejecutándose');
+        console.log('   2. MySQL esté activo en XAMPP');
+        console.log('   3. La base de datos "taller_mecanico" exista');
+        console.log('   4. Usuario: root, Contraseña: (vacía)');
+        process.exit(1);
+    }
+    console.log('Conectado a MySQL/phpMyAdmin');
+    
+    // Crear tablas si no existen
+    createTables();
+});
+
+// FUNCIÓN PARA CREAR TABLAS
+function createTables() {
+    const createTableQueries = [
+        // Tabla usuarios
+        `CREATE TABLE IF NOT EXISTS usuarios (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            role VARCHAR(20) DEFAULT 'user'
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+        // Tabla citas
+        `CREATE TABLE IF NOT EXISTS citas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            correo VARCHAR(100) NOT NULL,
+            telefono VARCHAR(20) NOT NULL,
+            marca_carro VARCHAR(50) NOT NULL,
+            modelo_carro VARCHAR(50) NOT NULL,
+            año_carro INT NOT NULL,
+            descripcion TEXT NOT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            estado VARCHAR(20) DEFAULT 'pendiente'
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+        // Tabla gruas
+        `CREATE TABLE IF NOT EXISTS gruas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            correo VARCHAR(100) NOT NULL,
+            telefono VARCHAR(20) NOT NULL,
+            marca_carro VARCHAR(50) NOT NULL,
+            modelo_carro VARCHAR(50) NOT NULL,
+            año_carro INT NOT NULL,
+            ubicacion TEXT NOT NULL,
+            descripcion_falla TEXT NOT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            estado VARCHAR(20) DEFAULT 'pendiente'
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+        // Tabla servicios
+        `CREATE TABLE IF NOT EXISTS servicios (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nombre VARCHAR(100) NOT NULL,
+            descripcion TEXT NOT NULL,
+            precio DECIMAL(10,2) NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+        // Tabla ofertas
+        `CREATE TABLE IF NOT EXISTS ofertas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            titulo VARCHAR(100) NOT NULL,
+            descripcion TEXT NOT NULL,
+            descuento VARCHAR(20) NOT NULL,
+            valido_hasta DATE NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+    ];
+
+    // Ejecutar cada query de creación
+    createTableQueries.forEach((query, index) => {
+        db.query(query, (err) => {
+            if (err) {
+                console.error(`Error creando tabla ${index + 1}:`, err.message);
+            }
+        });
+    });
+
+    // Insertar usuario admin por defecto
+    const insertAdminQuery = `INSERT IGNORE INTO usuarios (username, password, role) VALUES ('admin', 'admin123', 'admin')`;
+    db.query(insertAdminQuery, (err) => {
+        if (err) {
+            console.error('Error insertando usuario admin:', err.message);
+        } else {
+            console.log('Usuario admin creado: admin/admin123');
+        }
+    });
+
+    // Insertar datos de ejemplo después de un pequeño delay
+    setTimeout(insertSampleData, 1000);
+}
+
+// FUNCIÓN PARA INSERTAR DATOS DE EJEMPLO
+function insertSampleData() {
+    // Datos de ejemplo para servicios
+    const serviciosEjemplo = [
+        ['Cambio de aceite sintético', 'Cambio completo de aceite sintético premium y filtro. Incluye revisión de niveles de fluidos.', 899.99],
+        ['Alineación y balanceo láser', 'Alineación de dirección computarizada y balanceo de llantas con tecnología láser. Incluye rotación.', 1199.99],
+        ['Servicio completo de frenos', 'Cambio de balatas, discos, líquido de frenos y revisión de sistema hidráulico. Garantía 2 años.', 2499.99],
+        ['Reparación de suspensión', 'Revisión y reparación completa del sistema de suspensión: amortiguadores, ballestas, bujes.', 3899.99],
+        ['Servicio de transmisión', 'Cambio de fluido de transmisión automática o manual, ajuste y diagnóstico computarizado.', 3299.99]
+    ];
+
+    // Verificar si ya hay servicios
+    db.query('SELECT COUNT(*) as count FROM servicios', (err, results) => {
+        if (!err && results[0].count === 0) {
+            console.log('Insertando servicios de ejemplo...');
+            serviciosEjemplo.forEach(servicio => {
+                db.query('INSERT INTO servicios (nombre, descripcion, precio) VALUES (?, ?, ?)', servicio, (err) => {
+                    if (err) console.error('Error insertando servicio:', err.message);
+                });
+            });
+            console.log('Servicios de ejemplo insertados');
+        }
+    });
+
+    // Datos de ejemplo para ofertas
+    const ofertasEjemplo = [
+        ['Mantenimiento Primaveral 2024', '¡Prepárate para la primavera! Paquete completo: cambio de aceite, alineación, revisión de aire acondicionado y diagnóstico gratis.', '25%', '2024-06-30'],
+        ['Promo 2x1 Familiar', 'Trae el auto de un familiar y el segundo servicio tiene 40% de descuento. Válido para servicios mayores a $1,500.', '40%', '2024-12-31'],
+        ['Aceite Sintético Premium', 'Cambio de aceite sintético total con 20% de descuento. Incluye filtro de aire y diagnóstico gratuito.', '20%', '2024-05-15'],
+        ['Kit Frenos Seguridad Total', 'Cambio completo de frenos + líquido + diagnóstico. ¡Incluye pastillas de cortesía para próximos cambios!', '30%', '2024-07-20']
+    ];
+
+    // Verificar si ya hay ofertas
+    db.query('SELECT COUNT(*) as count FROM ofertas', (err, results) => {
+        if (!err && results[0].count === 0) {
+            console.log('Insertando ofertas de ejemplo...');
+            ofertasEjemplo.forEach(oferta => {
+                db.query('INSERT INTO ofertas (titulo, descripcion, descuento, valido_hasta) VALUES (?, ?, ?, ?)', oferta, (err) => {
+                    if (err) console.error('Error insertando oferta:', err.message);
+                });
+            });
+            console.log('Ofertas de ejemplo insertadas');
+        }
+    });
+}
+
+// Configuración de correo (transporter) - MANTIENE LA MISMA CONFIGURACIÓN
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -76,6 +175,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Middleware para verificar admin (NO CAMBIA)
 function verificarAdmin(req, res, next) {
     const token = req.headers.authorization;
     if (token === 'admin-token') {
@@ -85,17 +185,24 @@ function verificarAdmin(req, res, next) {
     }
 }
 
+// RUTAS DE LA API (TODAS MODIFICADAS PARA MYSQL)
+
+// Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    db.get('SELECT * FROM usuarios WHERE username = ? AND password = ?', [username, password], (err, user) => {
-        if (err || !user) {
-            return res.status(401).json({ error: 'Credenciales inválidas' });
+    db.query('SELECT * FROM usuarios WHERE username = ? AND password = ?', 
+        [username, password], (err, results) => {
+            if (err || !results[0]) {
+                return res.status(401).json({ error: 'Credenciales inválidas' });
+            }
+            const user = results[0];
+            const token = user.role === 'admin' ? 'admin-token' : 'user-token';
+            res.json({ token, role: user.role, username: user.username });
         }
-        const token = user.role === 'admin' ? 'admin-token' : 'user-token';
-        res.json({ token, role: user.role, username: user.username });
-    });
+    );
 });
 
+// Información de misión/visión
 app.get('/api/info/mision-vision', (req, res) => {
     res.json({
         mision: 'Proveer servicios mecánicos de calidad con honestidad y profesionalismo, garantizando la seguridad y satisfacción de nuestros clientes.',
@@ -104,31 +211,34 @@ app.get('/api/info/mision-vision', (req, res) => {
     });
 });
 
+// Obtener servicios
 app.get('/api/servicios', (req, res) => {
-    db.all('SELECT * FROM servicios', [], (err, rows) => {
+    db.query('SELECT * FROM servicios', (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json(rows);
+        res.json(results);
     });
 });
 
+// Obtener ofertas
 app.get('/api/ofertas', (req, res) => {
-    db.all('SELECT * FROM ofertas', [], (err, rows) => {
+    db.query('SELECT * FROM ofertas', (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json(rows);
+        res.json(results);
     });
 });
 
+// Crear cita
 app.post('/api/citas', (req, res) => {
     const { nombre, correo, telefono, marca_carro, modelo_carro, año_carro, descripcion } = req.body;
     
-    db.run(`INSERT INTO citas (nombre, correo, telefono, marca_carro, modelo_carro, año_carro, descripcion) 
+    db.query(`INSERT INTO citas (nombre, correo, telefono, marca_carro, modelo_carro, año_carro, descripcion) 
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [nombre, correo, telefono, marca_carro, modelo_carro, año_carro, descripcion],
-        function(err) {
+        (err, results) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
@@ -145,18 +255,18 @@ app.post('/api/citas', (req, res) => {
                         
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                             <h3 style="color: #e74c3c; margin-top: 0;">Detalles de la cita:</h3>
-                            <p><strong>📞 Teléfono:</strong> ${telefono}</p>
-                            <p><strong>🚗 Vehículo:</strong> ${marca_carro} ${modelo_carro} (${año_carro})</p>
-                            <p><strong>🔧 Descripción:</strong> ${descripcion}</p>
+                            <p><strong>Teléfono:</strong> ${telefono}</p>
+                            <p><strong>Vehículo:</strong> ${marca_carro} ${modelo_carro} (${año_carro})</p>
+                            <p><strong>Descripción:</strong> ${descripcion}</p>
                         </div>
                         
                         <p>Nos pondremos en contacto en las próximas 24 horas para confirmar la fecha y hora exacta de su cita.</p>
                         
                         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                            <p style="color: #666; font-size: 14px;">Taller Mecánico Pro<br>
-                            📍 Av. Principal #123, Ciudad<br>
-                            📞 (123) 456-7890<br>
-                            ✉️ contacto@tallermecanicopro.com</p>
+                            <p style="color: #666; font-size: 14px;">Taller Mecánico<br>
+                            Av. Principal #123, Ciudad Juarez<br>
+                            (123) 456-7890<br>
+                            ✉️ Marco@tallermecanicopro.com</p>
                         </div>
                     </div>
                 `
@@ -170,18 +280,19 @@ app.post('/api/citas', (req, res) => {
                 }
             });
 
-            res.json({ id: this.lastID, message: 'Cita creada y correo enviado' });
+            res.json({ id: results.insertId, message: 'Cita creada y correo enviado' });
         }
     );
 });
 
+// Solicitar grúa
 app.post('/api/gruas', (req, res) => {
     const { nombre, correo, telefono, marca_carro, modelo_carro, año_carro, ubicacion, descripcion_falla } = req.body;
     
-    db.run(`INSERT INTO gruas (nombre, correo, telefono, marca_carro, modelo_carro, año_carro, ubicacion, descripcion_falla) 
+    db.query(`INSERT INTO gruas (nombre, correo, telefono, marca_carro, modelo_carro, año_carro, ubicacion, descripcion_falla) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [nombre, correo, telefono, marca_carro, modelo_carro, año_carro, ubicacion, descripcion_falla],
-        function(err) {
+        (err, results) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
@@ -198,19 +309,19 @@ app.post('/api/gruas', (req, res) => {
                         
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
                             <h3 style="color: #e74c3c; margin-top: 0;">Detalles de la solicitud:</h3>
-                            <p><strong>📞 Teléfono:</strong> ${telefono}</p>
-                            <p><strong>🚗 Vehículo:</strong> ${marca_carro} ${modelo_carro} (${año_carro})</p>
-                            <p><strong>📍 Ubicación:</strong> ${ubicacion}</p>
-                            <p><strong>🔧 Falla reportada:</strong> ${descripcion_falla}</p>
+                            <p><strong>Teléfono:</strong> ${telefono}</p>
+                            <p><strong>Vehículo:</strong> ${marca_carro} ${modelo_carro} (${año_carro})</p>
+                            <p><strong>Ubicación:</strong> ${ubicacion}</p>
+                            <p><strong>Falla reportada:</strong> ${descripcion_falla}</p>
                         </div>
                         
                         <p>Nuestro equipo de auxilio vial se pondrá en contacto con usted en los próximos 15-20 minutos.</p>
-                        <p style="color: #e74c3c; font-weight: bold;">⚠️ Por su seguridad, permanezca en un lugar seguro.</p>
+                        <p style="color: #e74c3c; font-weight: bold;"> Por su seguridad, permanezca en un lugar seguro.</p>
                         
                         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
                             <p style="color: #666; font-size: 14px;">Taller Mecánico Pro - Servicio de Grúa 24/7<br>
-                            🚨 Emergencias: (123) 456-7891<br>
-                            ✉️ gruas@tallermecanicopro.com</p>
+                            Emergencias: (123) 456-7891<br>
+                            gruas@tallermecanicopro.com</p>
                         </div>
                     </div>
                 `
@@ -224,11 +335,12 @@ app.post('/api/gruas', (req, res) => {
                 }
             });
 
-            res.json({ id: this.lastID, message: 'Solicitud de grúa registrada' });
+            res.json({ id: results.insertId, message: 'Solicitud de grúa registrada' });
         }
     );
 });
 
+// Ubicación
 app.get('/api/ubicacion', (req, res) => {
     res.json({
         direccion: 'Av. Tecnológico #1500, Col. Centro, Ciudad de México, CDMX 06300',
@@ -240,6 +352,7 @@ app.get('/api/ubicacion', (req, res) => {
     });
 });
 
+// Nosotros
 app.get('/api/nosotros', (req, res) => {
     res.json({
         historia: 'Fundado en 2010 por el Ing. Roberto Martínez, comenzamos como un pequeño taller familiar. Hoy, con más de 13 años de experiencia, hemos crecido hasta convertirnos en un referente de confianza en servicios automotrices, atendiendo más de 500 vehículos mensualmente.',
@@ -249,46 +362,53 @@ app.get('/api/nosotros', (req, res) => {
     });
 });
 
+// ========== RUTAS DE ADMINISTRACIÓN ==========
+
+// Obtener todas las citas (admin)
 app.get('/api/admin/citas', verificarAdmin, (req, res) => {
-    db.all('SELECT * FROM citas ORDER BY fecha DESC', [], (err, rows) => {
+    db.query('SELECT * FROM citas ORDER BY fecha DESC', (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json(rows);
+        res.json(results);
     });
 });
 
+// Obtener todas las grúas (admin)
 app.get('/api/admin/gruas', verificarAdmin, (req, res) => {
-    db.all('SELECT * FROM gruas ORDER BY fecha DESC', [], (err, rows) => {
+    db.query('SELECT * FROM gruas ORDER BY fecha DESC', (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json(rows);
+        res.json(results);
     });
 });
 
+// Obtener todos los usuarios (admin)
 app.get('/api/admin/usuarios', verificarAdmin, (req, res) => {
-    db.all('SELECT id, username, role FROM usuarios', [], (err, rows) => {
+    db.query('SELECT id, username, role FROM usuarios', (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json(rows);
+        res.json(results);
     });
 });
 
+// Crear nuevo usuario (admin)
 app.post('/api/admin/usuarios', verificarAdmin, (req, res) => {
     const { username, password, role } = req.body;
-    db.run('INSERT INTO usuarios (username, password, role) VALUES (?, ?, ?)',
+    db.query('INSERT INTO usuarios (username, password, role) VALUES (?, ?, ?)',
         [username, password, role || 'user'],
-        function(err) {
+        (err, results) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
-            res.json({ id: this.lastID });
+            res.json({ id: results.insertId });
         }
     );
 });
 
+// Actualizar usuario (admin)
 app.put('/api/admin/usuarios/:id', verificarAdmin, (req, res) => {
     const { username, password, role } = req.body;
     const id = req.params.id;
@@ -304,96 +424,62 @@ app.put('/api/admin/usuarios/:id', verificarAdmin, (req, res) => {
     query += ' WHERE id = ?';
     params.push(id);
     
-    db.run(query, params, function(err) {
+    db.query(query, params, (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json({ changes: this.changes });
+        res.json({ affectedRows: results.affectedRows });
     });
 });
 
+// Eliminar usuario (admin)
 app.delete('/api/admin/usuarios/:id', verificarAdmin, (req, res) => {
     const id = req.params.id;
-    db.run('DELETE FROM usuarios WHERE id = ? AND role != "admin"', [id], function(err) {
+    db.query('DELETE FROM usuarios WHERE id = ? AND role != "admin"', [id], (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json({ changes: this.changes });
+        res.json({ affectedRows: results.affectedRows });
     });
 });
 
+// Actualizar estado de cita (admin)
 app.put('/api/admin/citas/:id', verificarAdmin, (req, res) => {
     const { estado } = req.body;
-    db.run('UPDATE citas SET estado = ? WHERE id = ?', [estado, req.params.id], function(err) {
+    db.query('UPDATE citas SET estado = ? WHERE id = ?', [estado, req.params.id], (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json({ changes: this.changes });
+        res.json({ affectedRows: results.affectedRows });
     });
 });
 
+// Actualizar estado de grúa (admin)
 app.put('/api/admin/gruas/:id', verificarAdmin, (req, res) => {
     const { estado } = req.body;
-    db.run('UPDATE gruas SET estado = ? WHERE id = ?', [estado, req.params.id], function(err) {
+    db.query('UPDATE gruas SET estado = ? WHERE id = ?', [estado, req.params.id], (err, results) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
-        res.json({ changes: this.changes });
+        res.json({ affectedRows: results.affectedRows });
     });
 });
 
-setTimeout(() => {
-    db.get('SELECT COUNT(*) as count FROM servicios', (err, row) => {
-        if (row && row.count === 0) {
-            const servicios = [
-                ['Cambio de aceite sintético', 'Cambio completo de aceite sintético premium y filtro. Incluye revisión de niveles de fluidos.', 899.99],
-                ['Alineación y balanceo laser', 'Alineación de dirección computarizada y balanceo de llantas con tecnología láser. Incluye rotación.', 1199.99],
-                ['Servicio completo de frenos', 'Cambio de balatas, discos, líquido de frenos y revisión de sistema hidráulico. Garantía 2 años.', 2499.99],
-                ['Reparación de suspensión', 'Revisión y reparación completa del sistema de suspensión: amortiguadores, ballestas, bujes.', 3899.99],
-                ['Servicio de transmisión', 'Cambio de fluido de transmisión automática o manual, ajuste y diagnóstico computarizado.', 3299.99],
-                ['Diagnóstico computarizado completo', 'Escaneo OBD-II de todos los sistemas electrónicos del vehículo. Reporte detallado incluido.', 499.99],
-                ['Servicio de aire acondicionado', 'Recarga de gas R134a, limpieza de conductos, cambio de filtro de cabina y prueba de presión.', 1599.99],
-                ['Sistema eléctrico y batería', 'Prueba de carga, revisión de alternador, instalación de batería nueva y limpieza de terminales.', 1799.99],
-                ['Lavado y detailing premium', 'Lavado exterior e interior, encerado, limpieza de tapicería, pulido de faros y llantas.', 1299.99],
-                ['Mantenimiento mayor 100,000 km', 'Servicio completo: banda de tiempo, bomba de agua, bujías, filtros y fluidos.', 5899.99]
-            ];
-            
-            const stmt = db.prepare('INSERT INTO servicios (nombre, descripcion, precio) VALUES (?, ?, ?)');
-            servicios.forEach(servicio => {
-                stmt.run(servicio);
-            });
-            stmt.finalize();
-            console.log('✅ Servicios de prueba agregados');
-        }
-    });
-
-    db.get('SELECT COUNT(*) as count FROM ofertas', (err, row) => {
-        if (row && row.count === 0) {
-            const ofertas = [
-                ['Mantenimiento Primaveral 2024', '¡Prepárate para la primavera! Paquete completo: cambio de aceite, alineación, revisión de aire acondicionado y diagnóstico gratis.', '25%', '2024-06-30'],
-                ['Promo 2x1 Familiar', 'Trae el auto de un familiar y el segundo servicio tiene 40% de descuento. Válido para servicios mayores a $1,500.', '40%', '2024-12-31'],
-                ['Aceite Sintético Premium', 'Cambio de aceite sintético total con 20% de descuento. Incluye filtro de aire y diagnóstico gratuito.', '20%', '2024-05-15'],
-                ['Kit Frenos Seguridad Total', 'Cambio completo de frenos + líquido + diagnóstico. ¡Incluye pastillas de cortesía para próximos cambios!', '30%', '2024-07-20'],
-                ['Combo Suspensión Premium', 'Alineación láser + balanceo + revisión de suspensión completa. ¡Garantía extendida a 3 años!', '25%', '2024-08-10'],
-                ['Lavado + Encerado Gratis', 'Lavado exterior premium + encerado con cualquier servicio mayor a $2,000. ¡Hasta 3 veces por cliente!', 'Gratis', '2024-04-30'],
-                ['Diagnóstico Gratis por 1 Año', 'Con tu primera compra mayor a $3,000, obtén diagnósticos computarizados gratis por todo un año.', '100%', '2024-09-01'],
-                ['Promo Estudiantes y Maestros', 'Presenta tu credencial y obtén 15% de descuento en todos nuestros servicios. Válido todo el año.', '15%', '2024-12-31'],
-                ['Servicio de Grúa 50% OFF', 'Solicita nuestra grúa y obtén 50% de descuento en la mano de obra de la reparación. ¡Solo por tiempo limitado!', '50%', '2024-03-31'],
-                ['Primera Cita Especial', '¿Primera vez con nosotros? Obtén 20% de descuento en tu primer servicio + revisión gratuita de 21 puntos.', '20%', '2024-06-15']
-            ];
-            
-            const stmt = db.prepare('INSERT INTO ofertas (titulo, descripcion, descuento, valido_hasta) VALUES (?, ?, ?, ?)');
-            ofertas.forEach(oferta => {
-                stmt.run(oferta);
-            });
-            stmt.finalize();
-            console.log('✅ Ofertas de prueba agregadas');
-        }
-    });
-}, 2000);
+// ========== CONFIGURACIÓN FINAL ==========
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚗 Servidor Taller Mecánico corriendo en: http://localhost:${PORT}`);
-    console.log(`👤 Admin: usuario="admin", contraseña="admin123"`);
+    console.log(`Servidor Taller Mecánico corriendo en: http://localhost:${PORT}`);
+    console.log(`Admin: usuario="admin", contraseña="admin123"`);
+    console.log(`Base de datos: MySQL (XAMPP)`);
+    console.log(`Configuración de correo: ${process.env.EMAIL_USER ? 'Configurada' : 'No configurada (usar simulación)'}`);
+});
+
+// Manejo de errores no capturados
+process.on('uncaughtException', (err) => {
+    console.error('Error no capturado:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Promesa rechazada no manejada:', reason);
 });
